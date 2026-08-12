@@ -204,16 +204,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-void InitializeComCtl()
-{
-    INITCOMMONCONTROLSEX c = {.dwSize = sizeof(c), .dwICC = ICC_STANDARD_CLASSES};
-    InitCommonControlsEx(&c);
-}
-
 int CustomEntry(void)
 {
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-    InitializeComCtl();
 
     const wchar_t CLASS_NAME[] = L"pre commit window";
     hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
