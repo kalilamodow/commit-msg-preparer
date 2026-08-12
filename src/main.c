@@ -79,44 +79,25 @@ void *__cdecl memset(void *dest, int byte, size_t length)
     return dest;
 }
 
-// CopyMemory just uses the crt one so make my own yay
-void MyCopyMemory(void *dest, void *source, UINT length)
-{
-    char *d = (char *)dest;
-    char *s = (char *)source;
-    while (length--)
-        *d++ = *s++;
-}
-
-// will validate buf, if failure, return FALSE and set buf to the error
-BOOL ValidateName(LPWSTR buf)
+LPWSTR ValidateName(LPWSTR buf)
 {
     WCHAR *character = buf;
 
     while (*character)
     {
         if (*character < L'a' || *character > L'z')
-        {
-            MyCopyMemory(buf, L"Lowercase letters only", 22 * sizeof(WCHAR));
-            return FALSE;
-        }
+            return L"Lowercase letters only";
 
         character++;
     }
 
     if (character - buf < 3)
-    {
-        MyCopyMemory(buf, L"Name too short", 14 * sizeof(WCHAR));
-        return FALSE;
-    }
+        return L"Name too short";
 
     if (character - buf > 8)
-    {
-        MyCopyMemory(buf, L"Name too long", 13 * sizeof(WCHAR));
-        return FALSE;
-    }
+        return L"Name too long";
 
-    return TRUE;
+    return NULL;
 }
 
 HWND titleHwnd;
@@ -158,11 +139,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         switch (wParam)
         {
         case IDC_OKBUTTON: {
-            WCHAR buffer[128] = {0};
+            WCHAR buffer[128];
             GetWindowTextW(nameInputHwnd, buffer, 128);
-            if (!ValidateName(buffer))
+
+            LPWSTR error = ValidateName(buffer);
+            if (error)
             {
-                MessageBox(hwnd, buffer, L"Invalid name", MB_OK | MB_ICONERROR);
+                MessageBox(hwnd, error, L"Invalid name", MB_OK | MB_ICONERROR);
                 PostQuitMessage(1);
             }
             else
@@ -223,7 +206,7 @@ int CustomEntry(void)
 
     ShowWindow(hwnd, SW_SHOW);
 
-    MSG msg = {};
+    MSG msg;
     while (GetMessage(&msg, NULL, 0, 0))
     {
         TranslateMessage(&msg);
