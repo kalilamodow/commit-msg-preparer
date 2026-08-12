@@ -90,8 +90,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                                    DpiScale(265), DpiScale(24), hwnd, (HMENU)IDC_TITLETEXT, hInstance, NULL);
         SendMessage(titleHwnd, WM_SETFONT, (WPARAM)font, TRUE);
 
-        nameInputHwnd = CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE, DpiScale(10), DpiScale(36),
-                                       DpiScale(265), DpiScale(24), hwnd, (HMENU)IDC_NAMEINPUT, hInstance, NULL);
+        nameInputHwnd =
+            CreateWindowEx(WS_EX_CLIENTEDGE, "EDIT", "", WS_CHILD | WS_VISIBLE | WS_TABSTOP, DpiScale(10), DpiScale(36),
+                           DpiScale(265), DpiScale(24), hwnd, (HMENU)IDC_NAMEINPUT, hInstance, NULL);
         SendMessage(nameInputHwnd, WM_SETFONT, (WPARAM)font, TRUE);
 
         HWND okBtnHwnd =
@@ -100,7 +101,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         SendMessage(okBtnHwnd, WM_SETFONT, (WPARAM)font, TRUE);
 
         HWND cancelBtnHwnd =
-            CreateWindowEx(0, "BUTTON", "Cance", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, DpiScale(210),
+            CreateWindowEx(0, "BUTTON", "Cancel", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, DpiScale(210),
                            DpiScale(80), DpiScale(64), DpiScale(24), hwnd, (HMENU)IDC_CANCELBUTTON, hInstance, NULL);
         SendMessage(cancelBtnHwnd, WM_SETFONT, (WPARAM)font, TRUE);
 
@@ -180,8 +181,11 @@ int CustomEntry(void)
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0))
     {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
+        if (!IsDialogMessage(hwnd, &msg))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
     }
 
     ExitProcess(msg.wParam);
