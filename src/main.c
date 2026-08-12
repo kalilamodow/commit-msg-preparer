@@ -85,6 +85,22 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         InvalidateRect(hwnd, NULL, TRUE);
         return 0;
     }
+    case WM_COMMAND: {
+        switch (wParam)
+        {
+        case IDC_OKBUTTON: {
+            print(L"Yay");
+            PostQuitMessage(0);
+            return 0;
+        }
+        case IDC_CANCELBUTTON: {
+            print(L"Cancelled");
+            PostQuitMessage(1);
+            return 0;
+        }
+        }
+        return 0;
+    }
     case WM_PAINT: {
         return 0;
     }
