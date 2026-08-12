@@ -55,18 +55,9 @@ void SizeMainWindow(HWND hwnd)
                  SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
-UINT WStringLength(const wchar_t *text)
+void print(const wchar_t *text, const size_t length)
 {
-    const wchar_t *character = text;
-    while (*character)
-        character++;
-
-    return (UINT)(character - text);
-}
-
-void print(const wchar_t *text)
-{
-    WriteConsole(hConsole, text, WStringLength(text), NULL, NULL);
+    WriteConsole(hConsole, text, length, NULL, NULL);
     WriteConsole(hConsole, L"\r\n", 2, NULL, NULL);
 }
 
@@ -113,24 +104,23 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         SizeMainWindow(hwnd);
         HINSTANCE hInstance = GetModuleHandle(NULL);
 
-        titleHwnd =
-            CreateWindowEx(0, L"STATIC", L"Enter your name:", WS_CHILD | WS_VISIBLE, DpiScale(10), DpiScale(10),
-                           DpiScale(265), DpiScale(24), hwnd, (HMENU)IDC_TITLETEXT, GetModuleHandle(NULL), NULL);
+        titleHwnd = CreateWindowEx(0, L"STATIC", L"Enter your name:", WS_CHILD | WS_VISIBLE, DpiScale(10), DpiScale(10),
+                                   DpiScale(265), DpiScale(24), hwnd, (HMENU)IDC_TITLETEXT, hInstance, NULL);
         SendMessage(titleHwnd, WM_SETFONT, (WPARAM)font, TRUE);
 
         nameInputHwnd =
             CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE, DpiScale(10), DpiScale(36),
-                           DpiScale(265), DpiScale(24), hwnd, (HMENU)IDC_NAMEINPUT, GetModuleHandle(NULL), NULL);
+                           DpiScale(265), DpiScale(24), hwnd, (HMENU)IDC_NAMEINPUT, hInstance, NULL);
         SendMessage(nameInputHwnd, WM_SETFONT, (WPARAM)font, TRUE);
 
-        HWND okBtnHwnd = CreateWindowExW(0, L"BUTTON", L"OK", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
-                                         DpiScale(140), DpiScale(80), DpiScale(64), DpiScale(24), hwnd,
-                                         (HMENU)IDC_OKBUTTON, GetModuleHandleW(NULL), NULL);
+        HWND okBtnHwnd =
+            CreateWindowExW(0, L"BUTTON", L"OK", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON, DpiScale(140),
+                            DpiScale(80), DpiScale(64), DpiScale(24), hwnd, (HMENU)IDC_OKBUTTON, hInstance, NULL);
         SendMessage(okBtnHwnd, WM_SETFONT, (WPARAM)font, TRUE);
 
-        HWND cancelBtnHwnd = CreateWindowExW(
-            0, L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, DpiScale(210), DpiScale(80),
-            DpiScale(64), DpiScale(24), hwnd, (HMENU)IDC_CANCELBUTTON, GetModuleHandleW(NULL), NULL);
+        HWND cancelBtnHwnd =
+            CreateWindowExW(0, L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, DpiScale(210),
+                            DpiScale(80), DpiScale(64), DpiScale(24), hwnd, (HMENU)IDC_CANCELBUTTON, hInstance, NULL);
         SendMessage(cancelBtnHwnd, WM_SETFONT, (WPARAM)font, TRUE);
 
         return 0;
@@ -140,7 +130,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         {
         case IDC_OKBUTTON: {
             WCHAR buffer[128];
-            GetWindowTextW(nameInputHwnd, buffer, 128);
+            int length = GetWindowTextW(nameInputHwnd, buffer, 128);
 
             LPWSTR error = ValidateName(buffer);
             if (error)
@@ -150,14 +140,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             }
             else
             {
-                print(buffer);
+                print(buffer, length);
                 PostQuitMessage(0);
             }
 
             return 0;
         }
         case IDC_CANCELBUTTON: {
-            print(L"Cancelled");
+            print(L"Cancelled", 9);
             PostQuitMessage(1);
             return 0;
         }
