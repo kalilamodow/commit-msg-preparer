@@ -3,7 +3,10 @@
 
 #include <windows.h>
 
+#include <CommCtrl.h>
 #include <consoleapi.h>
+#include <corecrt_search.h>
+#include <libloaderapi.h>
 #include <minwindef.h>
 #include <processenv.h>
 #include <winbase.h>
@@ -11,17 +14,30 @@
 #include <wingdi.h>
 #include <winuser.h>
 
+#pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "user32")
 #pragma comment(lib, "gdi32")
+
+// makes it look modern
+#pragma comment(linker, "\"/manifestdependency:type='win32' \
+name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
+processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #include <wchar.h>
 
 #define WINDOW_WIDTH 300
-#define WINDOW_HEIGHT 200
+#define WINDOW_HEIGHT 180
 
 UINT currentDpi;
 HANDLE hConsole;
 HFONT font;
+
+enum
+{
+    IDC_OKBUTTON = 100,
+    IDC_CANCELBUTTON,
+    IDC_NAMEINPUT
+};
 
 int DpiScale(UINT input)
 {
@@ -30,7 +46,7 @@ int DpiScale(UINT input)
 
 void InitFont()
 {
-    font = CreateFont(DpiScale(24), 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
+    font = CreateFont(DpiScale(16), 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS,
                       CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, FF_DONTCARE, L"Segoe UI");
 }
 
@@ -51,14 +67,25 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     switch (uMsg)
     {
     case WM_CREATE: {
+        currentDpi = GetDpiForWindow(hwnd);
+        InitFont();
+        SizeMainWindow(hwnd);
+        HINSTANCE hInstance = GetModuleHandle(NULL);
+
+        HWND okBtnHwnd = CreateWindowExW(0, L"BUTTON", L"OK", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
+                                         DpiScale(140), DpiScale(110), DpiScale(64), DpiScale(24), hwnd,
+                                         (HMENU)IDC_OKBUTTON, GetModuleHandleW(NULL), NULL);
+        SendMessage(okBtnHwnd, WM_SETFONT, (WPARAM)font, TRUE);
+
+        HWND cancelBtnHwnd = CreateWindowExW(
+            0, L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, DpiScale(210), DpiScale(110),
+            DpiScale(64), DpiScale(24), hwnd, (HMENU)IDC_CANCELBUTTON, GetModuleHandleW(NULL), NULL);
+        SendMessage(cancelBtnHwnd, WM_SETFONT, (WPARAM)font, TRUE);
+
+        InvalidateRect(hwnd, NULL, TRUE);
         return 0;
     }
     case WM_PAINT: {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hwnd, &ps);
-        SelectObject(hdc, font);
-        TextOut(hdc, 8, 8, L"hi", 2);
-        EndPaint(hwnd, &ps);
         return 0;
     }
     case WM_DESTROY: {
@@ -70,9 +97,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
+void InitializeComCtl()
+{
+    INITCOMMONCONTROLSEX c = {.dwSize = sizeof(c), .dwICC = ICC_STANDARD_CLASSES};
+    InitCommonControlsEx(&c);
+}
+
 int main(void)
 {
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    InitializeComCtl();
 
     const wchar_t CLASS_NAME[] = L"pre commit window";
     hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -87,10 +121,8 @@ int main(void)
     HWND hwnd = CreateWindowEx(0, CLASS_NAME, L"Pre-commit", WS_CAPTION | WS_OVERLAPPED, CW_USEDEFAULT, CW_USEDEFAULT,
                                WINDOW_WIDTH, WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
 
-    currentDpi = GetDpiForWindow(hwnd);
-    InitFont();
-    SizeMainWindow(hwnd);
     ShowWindow(hwnd, SW_SHOW);
+    UpdateWindow(hwnd);
 
     MSG msg = {};
     while (GetMessage(&msg, NULL, 0, 0))
