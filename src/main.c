@@ -10,15 +10,12 @@
 #include <minwinbase.h>
 #include <minwindef.h>
 #include <processenv.h>
+#include <processthreadsapi.h>
 #include <winbase.h>
 #include <windef.h>
 #include <wingdi.h>
 #include <winnt.h>
 #include <winuser.h>
-
-#pragma comment(lib, "comctl32.lib")
-#pragma comment(lib, "user32")
-#pragma comment(lib, "gdi32")
 
 // makes it look modern
 #pragma comment(linker, "\"/manifestdependency:type='win32' \
@@ -58,10 +55,37 @@ void SizeMainWindow(HWND hwnd)
                  SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
+UINT WStringLength(const wchar_t *text)
+{
+    const wchar_t *character = text;
+    while (*character)
+        character++;
+
+    return (UINT)(character - text);
+}
+
 void print(const wchar_t *text)
 {
-    WriteConsole(hConsole, text, wcslen(text), NULL, NULL);
+    WriteConsole(hConsole, text, WStringLength(text), NULL, NULL);
     WriteConsole(hConsole, L"\r\n", 2, NULL, NULL);
+}
+
+#pragma function(memset)
+void *__cdecl memset(void *dest, int byte, size_t length)
+{
+    char *d = (char *)dest;
+    while (length--)
+        *d++ = (char)byte;
+    return dest;
+}
+
+// CopyMemory just uses the crt one so make my own yay
+void MyCopyMemory(void *dest, void *source, UINT length)
+{
+    char *d = (char *)dest;
+    char *s = (char *)source;
+    while (length--)
+        *d++ = *s++;
 }
 
 // will validate buf, if failure, return FALSE and set buf to the error
@@ -73,8 +97,7 @@ BOOL ValidateName(LPWSTR buf)
     {
         if (*character < L'a' || *character > L'z')
         {
-            ZeroMemory(buf, 23 * sizeof(WCHAR));
-            memcpy(buf, L"Lowercase letters only", 22 * sizeof(WCHAR));
+            MyCopyMemory(buf, L"Lowercase letters only", 22 * sizeof(WCHAR));
             return FALSE;
         }
 
@@ -83,15 +106,13 @@ BOOL ValidateName(LPWSTR buf)
 
     if (character - buf < 3)
     {
-        ZeroMemory(buf, 15 * sizeof(WCHAR));
-        memcpy(buf, L"Name too short", 14 * sizeof(WCHAR));
+        MyCopyMemory(buf, L"Name too short", 14 * sizeof(WCHAR));
         return FALSE;
     }
 
     if (character - buf > 8)
     {
-        ZeroMemory(buf, 14 * sizeof(WCHAR));
-        memcpy(buf, L"Name too long", 13 * sizeof(WCHAR));
+        MyCopyMemory(buf, L"Name too long", 13 * sizeof(WCHAR));
         return FALSE;
     }
 
@@ -138,7 +159,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         switch (wParam)
         {
         case IDC_OKBUTTON: {
-            WCHAR buffer[128];
+            WCHAR buffer[128] = {0};
             GetWindowTextW(nameInputHwnd, buffer, 128);
             if (!ValidateName(buffer))
             {
@@ -147,6 +168,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             }
             else
             {
+                print(buffer);
                 PostQuitMessage(0);
             }
 
@@ -188,7 +210,7 @@ void InitializeComCtl()
     InitCommonControlsEx(&c);
 }
 
-int main(void)
+int CustomEntry(void)
 {
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     InitializeComCtl();
@@ -197,7 +219,8 @@ int main(void)
     hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     HANDLE hInstance = GetModuleHandle(NULL);
 
-    WNDCLASS wc = {};
+    WNDCLASS wc = {0};
+
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = CLASS_NAME;
@@ -216,5 +239,5 @@ int main(void)
         DispatchMessage(&msg);
     }
 
-    return msg.wParam;
+    ExitProcess(msg.wParam);
 }
