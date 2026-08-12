@@ -7,11 +7,13 @@
 #include <consoleapi.h>
 #include <corecrt_search.h>
 #include <libloaderapi.h>
+#include <minwinbase.h>
 #include <minwindef.h>
 #include <processenv.h>
 #include <winbase.h>
 #include <windef.h>
 #include <wingdi.h>
+#include <winnt.h>
 #include <winuser.h>
 
 #pragma comment(lib, "comctl32.lib")
@@ -31,7 +33,6 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 UINT currentDpi;
 HANDLE hConsole;
 HFONT font;
-
 enum
 {
     IDC_OKBUTTON = 100,
@@ -63,7 +64,42 @@ void print(const wchar_t *text)
     WriteConsole(hConsole, L"\r\n", 2, NULL, NULL);
 }
 
+// will validate buf, if failure, return FALSE and set buf to the error
+BOOL ValidateName(LPWSTR buf)
+{
+    WCHAR *character = buf;
+
+    while (*character)
+    {
+        if (*character < L'a' || *character > L'z')
+        {
+            ZeroMemory(buf, 23 * sizeof(WCHAR));
+            memcpy(buf, L"Lowercase letters only", 22 * sizeof(WCHAR));
+            return FALSE;
+        }
+
+        character++;
+    }
+
+    if (character - buf < 3)
+    {
+        ZeroMemory(buf, 15 * sizeof(WCHAR));
+        memcpy(buf, L"Name too short", 14 * sizeof(WCHAR));
+        return FALSE;
+    }
+
+    if (character - buf > 8)
+    {
+        ZeroMemory(buf, 14 * sizeof(WCHAR));
+        memcpy(buf, L"Name too long", 13 * sizeof(WCHAR));
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 HWND titleHwnd;
+HWND nameInputHwnd;
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -80,7 +116,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                            DpiScale(265), DpiScale(24), hwnd, (HMENU)IDC_TITLETEXT, GetModuleHandle(NULL), NULL);
         SendMessage(titleHwnd, WM_SETFONT, (WPARAM)font, TRUE);
 
-        HWND nameInputHwnd =
+        nameInputHwnd =
             CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE, DpiScale(10), DpiScale(36),
                            DpiScale(265), DpiScale(24), hwnd, (HMENU)IDC_NAMEINPUT, GetModuleHandle(NULL), NULL);
         SendMessage(nameInputHwnd, WM_SETFONT, (WPARAM)font, TRUE);
@@ -102,8 +138,17 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         switch (wParam)
         {
         case IDC_OKBUTTON: {
-            print(L"Yay");
-            PostQuitMessage(0);
+            WCHAR buffer[128];
+            GetWindowTextW(nameInputHwnd, buffer, 128);
+            if (!ValidateName(buffer))
+            {
+                print(buffer);
+                PostQuitMessage(1);
+            }
+            else
+            {
+                PostQuitMessage(0);
+            }
             return 0;
         }
         case IDC_CANCELBUTTON: {
