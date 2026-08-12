@@ -1,0 +1,46 @@
+name: github release action
+
+on:
+    workflow_dispatch:
+
+jobs:
+    release-it:
+        runs-on: windows-latest
+        strategy:
+            matrix:
+                arch:
+                    - x86
+
+        steps:
+            - uses: actions/checkout@v4
+            - uses: ilammy/msvc-dev-cmd@v1
+              with:
+                  arch: ${{ matrix.arch }}
+
+            - name: Build something requiring CL.EXE
+              run: .\release-build.cmd
+              shell: cmd
+
+            - name: rename binary
+              run: ren "target.exe" "precommit.exe"
+              shell: cmd
+
+            - name: generate tag name
+              id: tag
+              shell: pwsh
+              run: |
+                  $tag = Get-Date -AsUTC -Format 'yyyy-MM-dd'
+                  $sha = $env:GITHUB_SHA.Substring(0,6)
+                  "tag=$tag-$sha" >> $env:GITHUB_OUTPUT
+
+            - name: create release
+              uses: softprops/action-gh-release@v3
+              with:
+                  tag_name: ${{ steps.tag.outputs.tag }}
+                  release_name: Release ${{ steps.tag.outputs.tag }}
+                  body: released on ${{ steps.tag.outputs.tag  }}
+                  draft: false
+                  prerelease: false
+                  files: precommit.exe
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
