@@ -26,7 +26,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 #include <wchar.h>
 
 #define WINDOW_WIDTH 300
-#define WINDOW_HEIGHT 180
+#define WINDOW_HEIGHT 150
 
 UINT currentDpi;
 HANDLE hConsole;
@@ -36,7 +36,8 @@ enum
 {
     IDC_OKBUTTON = 100,
     IDC_CANCELBUTTON,
-    IDC_NAMEINPUT
+    IDC_NAMEINPUT,
+    IDC_TITLETEXT
 };
 
 int DpiScale(UINT input)
@@ -62,6 +63,8 @@ void print(const wchar_t *text)
     WriteConsole(hConsole, L"\r\n", 2, NULL, NULL);
 }
 
+HWND titleHwnd;
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
@@ -72,13 +75,23 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         SizeMainWindow(hwnd);
         HINSTANCE hInstance = GetModuleHandle(NULL);
 
+        titleHwnd =
+            CreateWindowEx(0, L"STATIC", L"Enter your name:", WS_CHILD | WS_VISIBLE, DpiScale(10), DpiScale(10),
+                           DpiScale(265), DpiScale(24), hwnd, (HMENU)IDC_TITLETEXT, GetModuleHandle(NULL), NULL);
+        SendMessage(titleHwnd, WM_SETFONT, (WPARAM)font, TRUE);
+
+        HWND nameInputHwnd =
+            CreateWindowEx(WS_EX_CLIENTEDGE, L"EDIT", L"", WS_CHILD | WS_VISIBLE, DpiScale(10), DpiScale(36),
+                           DpiScale(265), DpiScale(24), hwnd, (HMENU)IDC_NAMEINPUT, GetModuleHandle(NULL), NULL);
+        SendMessage(nameInputHwnd, WM_SETFONT, (WPARAM)font, TRUE);
+
         HWND okBtnHwnd = CreateWindowExW(0, L"BUTTON", L"OK", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_DEFPUSHBUTTON,
-                                         DpiScale(140), DpiScale(110), DpiScale(64), DpiScale(24), hwnd,
+                                         DpiScale(140), DpiScale(80), DpiScale(64), DpiScale(24), hwnd,
                                          (HMENU)IDC_OKBUTTON, GetModuleHandleW(NULL), NULL);
         SendMessage(okBtnHwnd, WM_SETFONT, (WPARAM)font, TRUE);
 
         HWND cancelBtnHwnd = CreateWindowExW(
-            0, L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, DpiScale(210), DpiScale(110),
+            0, L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON, DpiScale(210), DpiScale(80),
             DpiScale(64), DpiScale(24), hwnd, (HMENU)IDC_CANCELBUTTON, GetModuleHandleW(NULL), NULL);
         SendMessage(cancelBtnHwnd, WM_SETFONT, (WPARAM)font, TRUE);
 
@@ -101,8 +114,18 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
         return 0;
     }
-    case WM_PAINT: {
-        return 0;
+    case WM_CTLCOLORSTATIC: {
+        HDC hdc = (HDC)wParam;
+        HWND control = (HWND)lParam;
+
+        if (control == titleHwnd)
+        {
+            SetBkMode(hdc, TRANSPARENT);
+            SetTextColor(hdc, RGB(0, 0, 0));
+            return (LRESULT)GetSysColorBrush(COLOR_WINDOW);
+        }
+
+        break;
     }
     case WM_DESTROY: {
         PostQuitMessage(22);
