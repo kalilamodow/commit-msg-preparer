@@ -152,7 +152,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             DpiScale(64), DpiScale(24), hwnd, (HMENU)IDC_CANCELBUTTON, GetModuleHandleW(NULL), NULL);
         SendMessage(cancelBtnHwnd, WM_SETFONT, (WPARAM)font, TRUE);
 
-        InvalidateRect(hwnd, NULL, TRUE);
         return 0;
     }
     case WM_COMMAND: {
@@ -223,7 +222,6 @@ int CustomEntry(void)
                                WINDOW_WIDTH, WINDOW_HEIGHT, NULL, NULL, hInstance, NULL);
 
     ShowWindow(hwnd, SW_SHOW);
-    UpdateWindow(hwnd);
 
     MSG msg = {};
     while (GetMessage(&msg, NULL, 0, 0))
