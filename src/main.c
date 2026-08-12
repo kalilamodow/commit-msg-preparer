@@ -108,7 +108,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
     }
     case WM_COMMAND: {
-        switch (wParam)
+        switch (LOWORD(wParam))
         {
         case IDC_OKBUTTON: {
             char buffer[128];
