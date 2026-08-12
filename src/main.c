@@ -142,13 +142,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             GetWindowTextW(nameInputHwnd, buffer, 128);
             if (!ValidateName(buffer))
             {
-                print(buffer);
+                MessageBox(hwnd, buffer, L"Invalid name", MB_OK | MB_ICONERROR);
                 PostQuitMessage(1);
             }
             else
             {
                 PostQuitMessage(0);
             }
+
             return 0;
         }
         case IDC_CANCELBUTTON: {
