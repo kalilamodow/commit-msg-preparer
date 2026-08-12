@@ -56,8 +56,8 @@ void SizeMainWindow(HWND hwnd)
 
 void print(const char *text, const size_t length)
 {
-    WriteConsole(hConsole, text, length, NULL, NULL);
-    WriteConsole(hConsole, "\r\n", 2, NULL, NULL);
+    WriteFile(hConsole, text, length, NULL, NULL);
+    WriteFile(hConsole, "\r\n", 2, NULL, NULL);
 }
 
 #pragma function(memset)
