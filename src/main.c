@@ -1,27 +1,10 @@
 #define WIN32_LEAN_AND_MEAN
-
 #include <windows.h>
-
-#include <CommCtrl.h>
-#include <consoleapi.h>
-#include <corecrt_search.h>
-#include <libloaderapi.h>
-#include <minwinbase.h>
-#include <minwindef.h>
-#include <processenv.h>
-#include <processthreadsapi.h>
-#include <winbase.h>
-#include <windef.h>
-#include <wingdi.h>
-#include <winnt.h>
-#include <winuser.h>
 
 // makes it look modern
 #pragma comment(linker, "\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")
-
-#include <wchar.h>
 
 #define WINDOW_WIDTH 300
 #define WINDOW_HEIGHT 150
